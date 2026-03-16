@@ -115,6 +115,8 @@ h1 {
   cursor: pointer;
   transition: opacity 0.15s, transform 0.1s;
   user-select: none;
+  touch-action: manipulation;
+  min-height: 44px;
 }
 
 .btn:hover { opacity: 0.85; }
@@ -343,7 +345,7 @@ kbd {
   background: rgba(255, 255, 255, 0.07);
   color: var(--text);
   font-family: var(--font);
-  font-size: 0.95rem;
+  font-size: 1rem; /* ≥16px prevents iOS auto-zoom */
   text-align: center;
   outline: none;
   transition: border-color 0.2s;
@@ -478,7 +480,7 @@ h2.loss { color: #cf4e4e; }
   background: rgba(255, 255, 255, 0.07);
   color: var(--text);
   font-family: var(--font);
-  font-size: 0.95rem;
+  font-size: 1rem; /* ≥16px prevents iOS auto-zoom */
   outline: none;
   transition: border-color 0.2s;
 }
@@ -526,6 +528,13 @@ h2.loss { color: #cf4e4e; }
 /* #rosco-container gets transform: scale(X) applied by JS via resizeRosco() */
 /* #hud width is adjusted by JS to match */
 
+/* Game screen: allow scrolling if rosco doesn't fit, align to top */
+#screen-game {
+  justify-content: flex-start;
+  padding-top: 6px;
+  overflow-y: auto;
+}
+
 @media (max-width: 650px) {
   .start-card,
   .end-card {
@@ -535,6 +544,48 @@ h2.loss { color: #cf4e4e; }
 
   h1 { font-size: 2rem; }
   h2 { font-size: 1.6rem; }
+
+  #hud {
+    padding: 4px 4px 8px;
+  }
+
+  #clue-text {
+    font-size: 0.78rem;
+    min-height: 48px;
+    max-height: 80px;
+  }
+
+  #dashboard {
+    padding: 14px 12px 10px;
+    gap: 8px;
+    width: 210px;
+  }
+
+  #current-letter-label {
+    font-size: 2.8rem;
+  }
+
+  .btn-submit,
+  .btn-pass {
+    font-size: 0.75rem;
+    padding: 8px 2px;
+  }
+}
+
+@media (max-width: 400px) {
+  #dashboard {
+    width: 190px;
+    padding: 10px 10px 8px;
+    gap: 6px;
+  }
+
+  #current-letter-label {
+    font-size: 2.4rem;
+  }
+
+  #clue-text {
+    font-size: 0.72rem;
+  }
 }
 
 /* ── Background decoration ───────────────────────────────────── */

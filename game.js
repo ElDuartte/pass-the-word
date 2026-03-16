@@ -133,7 +133,11 @@ function getBubble(index) {
 function resizeRosco() {
   const container  = $('rosco-container');
   const hud        = $('hud');
-  const available  = Math.min(window.innerWidth - 32, window.innerHeight * 0.78);
+  const hudHeight  = hud.offsetHeight || 64;
+  const available  = Math.min(
+    window.innerWidth - 32,
+    window.innerHeight - hudHeight - 24
+  );
   const scale      = Math.min(1, available / ROSCO_SIZE);
 
   container.style.transform       = `scale(${scale})`;
