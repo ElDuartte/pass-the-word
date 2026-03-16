@@ -1,0 +1,550 @@
+/* ── Reset & Base ────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #06071a;
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-border: rgba(255, 255, 255, 0.1);
+  --gold: #f0c040;
+  --blue: #1a3a9f;
+  --green: #1a8f3a;
+  --red: #9f1a1a;
+  --text: #e8eaf0;
+  --text-dim: #8890aa;
+  --font: 'Segoe UI', system-ui, Arial, sans-serif;
+
+  /* Rosco geometry — JS reads these as constants too */
+  --rosco-size: 600px;
+  --bubble-size: 44px;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-x: hidden;
+}
+
+/* ── Screens ─────────────────────────────────────────────────── */
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* ── Start Screen ────────────────────────────────────────────── */
+.start-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 20px;
+  padding: 40px 48px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+
+h1 {
+  font-size: 2.8rem;
+  font-weight: 900;
+  color: var(--gold);
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: var(--text-dim);
+  font-size: 1rem;
+  margin-bottom: 24px;
+}
+
+.rules {
+  text-align: left;
+  list-style: none;
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rules li {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  padding-left: 20px;
+  position: relative;
+  line-height: 1.5;
+}
+
+.rules li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+}
+
+.rules strong {
+  color: var(--text);
+}
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+.btn {
+  border: none;
+  border-radius: 10px;
+  font-family: var(--font);
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  user-select: none;
+}
+
+.btn:hover { opacity: 0.85; }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.btn-primary {
+  background: var(--gold);
+  color: #0a0a1a;
+  font-size: 1.1rem;
+  padding: 14px 40px;
+  width: 100%;
+}
+
+kbd {
+  display: inline-block;
+  font-family: var(--font);
+  font-size: 0.7em;
+  font-weight: 600;
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* ── HUD ─────────────────────────────────────────────────────── */
+#hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: var(--rosco-size);
+  max-width: 100%;
+  padding: 8px 4px 12px;
+}
+
+#score-correct,
+#score-wrong {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 64px;
+}
+
+.hud-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.hud-value {
+  font-size: 1.8rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.hud-value.correct { color: #4ecf70; }
+.hud-value.wrong   { color: #cf4e4e; }
+
+#timer-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+#timer-value {
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: var(--gold);
+  line-height: 1;
+  transition: color 0.3s;
+  font-variant-numeric: tabular-nums;
+}
+
+#timer-display.urgent #timer-value {
+  color: #ff4444;
+  animation: pulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from { opacity: 1; }
+  to   { opacity: 0.35; }
+}
+
+/* ── Rosco (Ring) ────────────────────────────────────────────── */
+#rosco-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+#rosco-container {
+  position: relative;
+  width: var(--rosco-size);
+  height: var(--rosco-size);
+  flex-shrink: 0;
+  transform-origin: top center;
+}
+
+#rosco {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Bubbles ─────────────────────────────────────────────────── */
+.bubble {
+  position: absolute;
+  width: var(--bubble-size);
+  height: var(--bubble-size);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: default;
+  user-select: none;
+  transition: background-color 0.35s ease, color 0.35s ease,
+              transform 0.2s ease, box-shadow 0.2s ease,
+              border-color 0.2s ease;
+}
+
+/* State colors — driven by both data-state attribute and semantic classes */
+.bubble[data-state="0"] {
+  background: var(--blue);
+  color: #c8d4ff;
+  border-color: rgba(100, 140, 255, 0.4);
+}
+
+.bubble[data-state="1"],
+.bubble.correct {
+  background: var(--green);
+  color: #c8ffd4;
+  border-color: rgba(100, 255, 140, 0.4);
+}
+
+.bubble[data-state="2"],
+.bubble.wrong {
+  background: var(--red);
+  color: #ffc8c8;
+  border-color: rgba(255, 100, 100, 0.4);
+}
+
+/* Active (currently highlighted) bubble */
+.bubble.active {
+  background: var(--gold) !important;
+  color: #1a1000 !important;
+  border-color: #fff !important;
+  transform: scale(1.35) !important;
+  box-shadow: 0 0 20px 6px rgba(240, 192, 64, 0.6) !important;
+  z-index: 10;
+}
+
+/* Flash animations */
+.bubble.flash-correct {
+  animation: flash-correct 0.5s ease forwards;
+}
+
+.bubble.flash-wrong {
+  animation: flash-wrong 0.45s ease forwards;
+}
+
+@keyframes flash-correct {
+  0%   { box-shadow: 0 0 0px 0px rgba(78, 207, 112, 0); }
+  40%  { box-shadow: 0 0 28px 10px rgba(78, 207, 112, 0.85); }
+  100% { box-shadow: 0 0 0px 0px rgba(78, 207, 112, 0); }
+}
+
+@keyframes flash-wrong {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-7px); }
+  40%       { transform: translateX(7px); }
+  60%       { transform: translateX(-5px); }
+  80%       { transform: translateX(5px); }
+}
+
+/* ── Dashboard (center of ring) ──────────────────────────────── */
+#dashboard {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 240px;
+  background: rgba(6, 7, 26, 0.85);
+  border: 1px solid var(--surface-border);
+  border-radius: 18px;
+  padding: 18px 16px 14px;
+  text-align: center;
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 5;
+}
+
+#current-letter-label {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: var(--gold);
+  line-height: 1;
+  text-shadow: 0 0 24px rgba(240, 192, 64, 0.5);
+}
+
+#clue-text {
+  font-size: 0.82rem;
+  color: var(--text);
+  line-height: 1.55;
+  min-height: 56px;
+  max-height: 72px;
+  overflow: hidden;
+}
+
+#answer-input {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 2px solid rgba(100, 140, 255, 0.4);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#answer-input:focus {
+  border-color: rgba(150, 180, 255, 0.7);
+}
+
+#answer-input::placeholder {
+  color: var(--text-dim);
+}
+
+#btn-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.btn-submit {
+  flex: 1;
+  background: #1e6e3a;
+  color: #c8ffd4;
+  font-size: 0.8rem;
+  padding: 8px 4px;
+}
+
+.btn-pass {
+  flex: 1;
+  background: #1e2e6e;
+  color: #c8d4ff;
+  font-size: 0.8rem;
+  padding: 8px 4px;
+}
+
+#feedback {
+  font-size: 0.8rem;
+  font-weight: 600;
+  min-height: 18px;
+  transition: opacity 0.3s;
+}
+
+#feedback.correct { color: #4ecf70; }
+#feedback.wrong   { color: #cf4e4e; }
+#feedback.hidden  { opacity: 0; }
+
+/* ── End Screen ──────────────────────────────────────────────── */
+.end-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 20px;
+  padding: 40px 48px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+#end-icon {
+  font-size: 3.5rem;
+  line-height: 1;
+}
+
+h2 {
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+h2.win  { color: var(--gold); }
+h2.loss { color: #cf4e4e; }
+
+#end-summary {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+#end-stats {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+}
+
+.stat-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.stat-number.correct { color: #4ecf70; }
+.stat-number.wrong   { color: #cf4e4e; }
+.stat-number.pending { color: var(--text-dim); }
+
+.stat-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+/* ── Campo de nombre (Start screen) ─────────────────────────── */
+.name-field {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.name-field label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+#input-player-name {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 9px;
+  border: 2px solid rgba(100, 140, 255, 0.4);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#input-player-name:focus {
+  border-color: rgba(150, 180, 255, 0.7);
+}
+
+#input-player-name::placeholder {
+  color: var(--text-dim);
+}
+
+/* ── Récord personal (End screen) ────────────────────────────── */
+#end-personal {
+  width: 100%;
+  border-top: 1px solid var(--surface-border);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.personal-name {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.personal-name strong {
+  color: var(--text);
+}
+
+.personal-best {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.personal-best.new-record {
+  color: var(--gold);
+}
+
+/* ── Responsive Scaling ──────────────────────────────────────── */
+
+/* #rosco-container gets transform: scale(X) applied by JS via resizeRosco() */
+/* #hud width is adjusted by JS to match */
+
+@media (max-width: 650px) {
+  .start-card,
+  .end-card {
+    padding: 28px 20px;
+    border-radius: 14px;
+  }
+
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.6rem; }
+}
+
+/* ── Background decoration ───────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(26, 58, 159, 0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 30% at 80% 80%, rgba(26, 143, 58, 0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: -1;
+}

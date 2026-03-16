@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pasapalabra</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- SCREEN: Start -->
+  <div id="screen-start" class="screen active">
+    <div class="start-card">
+      <h1>Pasapalabra</h1>
+      <p class="subtitle">El juego de las letras</p>
+      <ul class="rules">
+        <li>26 letras, 26 definiciones — responde cada palabra que empiece por la letra resaltada.</li>
+        <li>Pulsa <kbd>Enter</kbd> para enviar, <kbd>Espacio</kbd> para pasar cuando el campo esté vacío.</li>
+        <li>Tienes <strong>150 segundos</strong>. ¡Acierta las 26 para ganar!</li>
+      </ul>
+      <div class="name-field">
+        <label for="input-player-name">Tu nombre</label>
+        <input
+          id="input-player-name"
+          type="text"
+          maxlength="24"
+          placeholder="Escribe tu nombre…"
+          autocomplete="given-name"
+          spellcheck="false"
+        />
+      </div>
+      <button id="btn-start" class="btn btn-primary">Empezar partida</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Playing -->
+  <div id="screen-game" class="screen">
+
+    <!-- HUD -->
+    <div id="hud">
+      <div id="score-correct">
+        <span class="hud-label">Aciertos</span>
+        <span id="count-correct" class="hud-value correct">0</span>
+      </div>
+      <div id="timer-display">
+        <span id="timer-value">150</span>
+        <span class="hud-label">seg</span>
+      </div>
+      <div id="score-wrong">
+        <span class="hud-label">Errores</span>
+        <span id="count-wrong" class="hud-value wrong">0</span>
+      </div>
+    </div>
+
+    <!-- Rosco container: ring + dashboard -->
+    <div id="rosco-wrapper">
+      <div id="rosco-container">
+        <!-- Bubbles are injected here by game.js -->
+        <div id="rosco"></div>
+
+        <!-- Central dashboard -->
+        <div id="dashboard">
+          <div id="current-letter-label">?</div>
+          <p id="clue-text">Press Start to begin...</p>
+          <input
+            id="answer-input"
+            type="text"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            placeholder="Escribe tu respuesta..."
+          />
+          <div id="btn-row">
+            <button id="btn-submit" class="btn btn-submit">Enviar <kbd>↵</kbd></button>
+            <button id="btn-pass" class="btn btn-pass">Pasar <kbd>␣</kbd></button>
+          </div>
+          <div id="feedback"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SCREEN: End -->
+  <div id="screen-end" class="screen">
+    <div class="end-card">
+      <div id="end-icon"></div>
+      <h2 id="end-title">Fin del juego</h2>
+      <p id="end-summary"></p>
+      <div id="end-stats"></div>
+      <button id="btn-restart" class="btn btn-primary">Volver a jugar</button>
+    </div>
+  </div>
+
+  <script src="words.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
