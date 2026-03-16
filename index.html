@@ -46,9 +46,21 @@
         <span id="timer-value">150</span>
         <span class="hud-label">seg</span>
       </div>
-      <div id="score-wrong">
-        <span class="hud-label">Errores</span>
-        <span id="count-wrong" class="hud-value wrong">0</span>
+      <div class="hud-right">
+        <div id="score-wrong">
+          <span class="hud-label">Errores</span>
+          <span id="count-wrong" class="hud-value wrong">0</span>
+        </div>
+        <button id="btn-pause" class="btn" aria-label="Pausar">⏸</button>
+      </div>
+    </div>
+
+    <!-- Pause overlay -->
+    <div id="pause-overlay">
+      <div class="pause-card">
+        <h3 class="pause-title">Pausa</h3>
+        <div id="pause-leaderboard"></div>
+        <button id="btn-resume" class="btn btn-primary">Continuar <kbd>Esc</kbd></button>
       </div>
     </div>
 
@@ -92,6 +104,7 @@
       <h2 id="end-title">Fin del juego</h2>
       <p id="end-summary"></p>
       <div id="end-stats"></div>
+      <div id="end-leaderboard"></div>
       <button id="btn-restart" class="btn btn-primary">Volver a jugar</button>
     </div>
   </div>

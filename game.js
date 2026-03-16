@@ -437,6 +437,71 @@ function renderEndStats() {
   ` : '';
 
   $('end-stats').innerHTML = statsHTML + personalHTML;
+
+  // Leaderboard (uses the date of the entry just saved)
+  const currentDate = data?.history[data.history.length - 1]?.date ?? null;
+  renderLeaderboard('end-leaderboard', currentDate);
+}
+
+function renderLeaderboard(elId, currentDate) {
+  const data = loadScores();
+  const el   = $(elId);
+
+  if (!data || !data.history.length) { el.innerHTML = ''; return; }
+
+  const sorted = [...data.history]
+    .sort((a, b) => b.score - a.score || b.timeLeft - a.timeLeft)
+    .slice(0, 10);
+
+  const rows = sorted.map((entry, i) => {
+    const isCurrent = entry.date === currentDate;
+    const pos   = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
+    const fecha = new Date(entry.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+    const outcomeClass = entry.outcome === 'win' ? 'lb-outcome-win' : 'lb-outcome-loss';
+    const outcomeIcon  = entry.outcome === 'win' ? '✓' : '✗';
+    return `<tr class="${isCurrent ? 'lb-current' : ''}">
+        <td class="lb-pos">${pos}</td>
+        <td>${entry.name || 'Anónimo'}</td>
+        <td>${entry.score}</td>
+        <td>${entry.timeLeft}s</td>
+        <td class="${outcomeClass}">${outcomeIcon}</td>
+        <td>${fecha}</td>
+      </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <p class="lb-title">Tabla de puntuaciones</p>
+    <table class="lb-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nombre</th>
+          <th>✓</th>
+          <th>Tiempo</th>
+          <th>Res.</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ── Pause ─────────────────────────────────────────────────────────
+function pauseGame() {
+  if (state.phase !== 'playing') return;
+  state.phase = 'paused';
+  clearInterval(state.timerInterval);
+  state.timerInterval = null;
+  renderLeaderboard('pause-leaderboard', null);
+  $('pause-overlay').classList.add('active');
+}
+
+function resumeGame() {
+  if (state.phase !== 'paused') return;
+  state.phase = 'playing';
+  $('pause-overlay').classList.remove('active');
+  state.timerInterval = setInterval(tickTimer, 1000);
+  $('answer-input').focus();
 }
 
 // ── Feedback helpers ─────────────────────────────────────────────
@@ -557,6 +622,10 @@ function bootstrap() {
 
   $('btn-pass').addEventListener('click', passWord);
 
+  $('btn-pause').addEventListener('click', pauseGame);
+
+  $('btn-resume').addEventListener('click', resumeGame);
+
   $('btn-restart').addEventListener('click', () => {
     // Re-enable input in case it was disabled from a loss
     $('answer-input').disabled = false;
@@ -565,6 +634,13 @@ function bootstrap() {
   });
 
   document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (state.phase === 'paused') resumeGame();
+      else if (state.phase === 'playing') pauseGame();
+      return;
+    }
+
     if (state.phase !== 'playing') return;
 
     if (e.key === 'Enter') {
