@@ -18,8 +18,8 @@
   --font: 'Segoe UI', system-ui, Arial, sans-serif;
 
   /* Rosco geometry — JS reads these as constants too */
-  --rosco-size: 600px;
-  --bubble-size: 44px;
+  --rosco-size: 700px;
+  --bubble-size: 58px;
 }
 
 html, body {
@@ -296,7 +296,7 @@ kbd {
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 15px;
+  font-size: 19px;
   letter-spacing: 0;
   border: 2px solid rgba(255, 255, 255, 0.2);
   cursor: default;
@@ -360,94 +360,35 @@ kbd {
   80%       { transform: translateX(5px); }
 }
 
-/* ── Dashboard (tarjeta debajo del rosco) ────────────────────── */
-#dashboard {
-  width: var(--rosco-size);
-  max-width: calc(100vw - 32px);
-  background: rgba(6, 7, 26, 0.85);
-  border: 1px solid var(--surface-border);
-  border-radius: 18px;
-  padding: 14px 16px 12px;
-  text-align: center;
-  backdrop-filter: blur(12px);
+/* ── Player bar ──────────────────────────────────────────────── */
+#player-bar {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  margin-top: 10px;
+  width: var(--rosco-size);
+  max-width: 100%;
+  padding: 2px 4px 8px;
 }
 
-#current-letter-label {
-  font-size: 3.5rem;
+#player-bar-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+#player-bar-rank {
+  font-size: 1rem;
   font-weight: 900;
   color: var(--gold);
-  line-height: 1;
-  text-shadow: 0 0 24px rgba(240, 192, 64, 0.5);
 }
 
-#clue-text {
+/* ── Key hint ────────────────────────────────────────────────── */
+#key-hint {
   font-size: 0.82rem;
-  color: var(--text);
-  line-height: 1.55;
-  min-height: 56px;
-  max-height: 72px;
-  overflow: hidden;
-}
-
-#answer-input {
-  width: 100%;
-  padding: 9px 12px;
-  border-radius: 9px;
-  border: 2px solid rgba(100, 140, 255, 0.4);
-  background: rgba(255, 255, 255, 0.07);
-  color: var(--text);
-  font-family: var(--font);
-  font-size: 1rem; /* ≥16px prevents iOS auto-zoom */
-  text-align: center;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-#answer-input:focus {
-  border-color: rgba(150, 180, 255, 0.7);
-}
-
-#answer-input::placeholder {
   color: var(--text-dim);
+  margin-top: 12px;
+  letter-spacing: 0.3px;
 }
-
-#btn-row {
-  display: flex;
-  gap: 8px;
-  width: 100%;
-}
-
-.btn-submit {
-  flex: 1;
-  background: #1e6e3a;
-  color: #c8ffd4;
-  font-size: 0.8rem;
-  padding: 8px 4px;
-}
-
-.btn-pass {
-  flex: 1;
-  background: #1e2e6e;
-  color: #c8d4ff;
-  font-size: 0.8rem;
-  padding: 8px 4px;
-}
-
-#feedback {
-  font-size: 0.8rem;
-  font-weight: 600;
-  min-height: 18px;
-  transition: opacity 0.3s;
-}
-
-#feedback.correct { color: #4ecf70; }
-#feedback.wrong   { color: #cf4e4e; }
-#feedback.hidden  { opacity: 0; }
 
 /* ── End Screen ──────────────────────────────────────────────── */
 .end-card {
@@ -606,65 +547,8 @@ h2.loss { color: #cf4e4e; }
     padding: 4px 4px 8px;
   }
 
-  #clue-text {
-    font-size: 0.78rem;
-    min-height: 48px;
-    max-height: 80px;
-  }
-
-  #dashboard {
-    padding: 12px 12px 10px;
-    gap: 6px;
-    margin-top: 6px;
-  }
-
-  #current-letter-label {
-    font-size: 2.8rem;
-  }
-
-  .btn-submit,
-  .btn-pass {
-    font-size: 0.75rem;
-    padding: 8px 2px;
-  }
 }
 
-@media (max-width: 400px) {
-  #dashboard {
-    padding: 10px 10px 8px;
-    gap: 5px;
-    margin-top: 4px;
-  }
-
-  #current-letter-label {
-    font-size: 2.4rem;
-  }
-
-  #clue-text {
-    font-size: 0.72rem;
-  }
-}
-
-/* ── Webcam (círculo central del rosco) ──────────────────────── */
-#webcam {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  /* mirror + center */
-  transform: translate(-50%, -50%) scaleX(-1);
-  width: 410px;
-  height: 410px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid var(--surface-border);
-  background: #111;
-  z-index: 5;
-  display: none;
-}
-
-#webcam.active {
-  display: block;
-}
 
 /* ── Leaderboard ─────────────────────────────────────────────── */
 #end-leaderboard {

@@ -55,6 +55,12 @@
       </div>
     </div>
 
+    <!-- Player name + rank -->
+    <div id="player-bar">
+      <span id="player-bar-name"></span>
+      <span id="player-bar-rank"></span>
+    </div>
+
     <!-- Pause overlay -->
     <div id="pause-overlay">
       <div class="pause-card">
@@ -64,35 +70,16 @@
       </div>
     </div>
 
-    <!-- Rosco container: ring + webcam in center -->
+    <!-- Rosco -->
     <div id="rosco-wrapper">
       <div id="rosco-container">
-        <!-- Bubbles are injected here by game.js -->
         <div id="rosco"></div>
-
-        <!-- Webcam fills the center circle -->
-        <video id="webcam" autoplay playsinline muted></video>
       </div>
     </div>
 
-    <!-- Dashboard card — below the ring -->
-    <div id="dashboard">
-      <div id="current-letter-label">?</div>
-      <p id="clue-text">Pulsa Empezar para comenzar...</p>
-      <input
-        id="answer-input"
-        type="text"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        spellcheck="false"
-        placeholder="Escribe tu respuesta..."
-      />
-      <div id="btn-row">
-        <button id="btn-submit" class="btn btn-submit">Enviar <kbd>↵</kbd></button>
-        <button id="btn-pass" class="btn btn-pass">Pasar <kbd>␣</kbd></button>
-      </div>
-      <div id="feedback"></div>
+    <!-- Key hint -->
+    <div id="key-hint">
+      <kbd>S</kbd> Correcto &ensp;·&ensp; <kbd>N</kbd> Incorrecto
     </div>
 
   </div>

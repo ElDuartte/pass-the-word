@@ -1,9 +1,9 @@
 'use strict';
 
 // ── Constants ────────────────────────────────────────────────────
-const ROSCO_SIZE       = 600;   // logical px (matches --rosco-size in CSS)
-const ROSCO_RADIUS     = 228;   // px from center to bubble center
-const BUBBLE_SIZE      = 44;    // px diameter (matches --bubble-size in CSS)
+const ROSCO_SIZE       = 700;   // logical px (matches --rosco-size in CSS)
+const ROSCO_RADIUS     = 265;   // px from center to bubble center
+const BUBBLE_SIZE      = 58;    // px diameter (matches --bubble-size in CSS)
 const TIMER_START      = 150;   // seconds
 const URGENT_THRESHOLD = 30;    // seconds at which tick sound + red timer kick in
 
@@ -131,25 +131,26 @@ function getBubble(index) {
 
 // ── Responsive scaling ───────────────────────────────────────────
 function resizeRosco() {
-  const container   = $('rosco-container');
-  const hud         = $('hud');
-  const dashboard   = $('dashboard');
-  const hudHeight   = hud.offsetHeight || 64;
-  const dashHeight  = dashboard.offsetHeight || 130;
-  const available   = Math.min(
+  const container  = $('rosco-container');
+  const hud        = $('hud');
+  const playerBar  = $('player-bar');
+  const keyHint    = $('key-hint');
+  const hudHeight  = hud.offsetHeight || 64;
+  const barHeight  = playerBar.offsetHeight || 28;
+  const hintHeight = keyHint.offsetHeight || 32;
+  const available  = Math.min(
     window.innerWidth - 32,
-    window.innerHeight - hudHeight - dashHeight - 24
+    window.innerHeight - hudHeight - barHeight - hintHeight - 24
   );
   const scale = Math.min(1, available / ROSCO_SIZE);
 
   container.style.transform       = `scale(${scale})`;
   container.style.transformOrigin = 'top center';
-  // Collapse the empty layout space that transform: scale leaves behind
   container.style.marginBottom    = `-${ROSCO_SIZE * (1 - scale)}px`;
 
   const scaledWidth = `${ROSCO_SIZE * scale}px`;
-  hud.style.width       = scaledWidth;
-  dashboard.style.width = scaledWidth;
+  hud.style.width        = scaledWidth;
+  playerBar.style.width  = scaledWidth;
 }
 
 // ── Game flow ────────────────────────────────────────────────────
@@ -166,7 +167,6 @@ function initGame() {
   // Show game screen
   showScreen('game');
   resizeRosco();
-  startWebcam();
 
   // Reset HUD
   $('count-correct').textContent = '0';
@@ -174,36 +174,23 @@ function initGame() {
   $('timer-value').textContent   = TIMER_START;
   $('timer-display').classList.remove('urgent');
 
-  // Reset dashboard
-  clearFeedback();
-  $('answer-input').value = '';
-  $('btn-submit').disabled = false;
-  $('btn-pass').disabled   = false;
+  // Player bar
+  const name = loadPlayerName() || 'Anónimo';
+  $('player-bar-name').textContent = name;
+  updatePlayerRank();
 
   // Highlight first letter
   state.currentIndex = 0;
   setActiveLetter(0);
-
-  // Focus input
-  $('answer-input').focus();
 
   // Start timer
   state.timerInterval = setInterval(tickTimer, 1000);
 }
 
 function setActiveLetter(index) {
-  // Remove active from previous
   document.querySelectorAll('.bubble.active').forEach(b => b.classList.remove('active'));
-
-  // Activate new bubble
   const bubble = getBubble(index);
   if (bubble) bubble.classList.add('active');
-
-  // Update dashboard
-  const word = WORD_BANK[index];
-  $('current-letter-label').textContent = word.letter;
-  $('clue-text').textContent            = word.clue;
-
   state.currentIndex = index;
 }
 
@@ -216,56 +203,24 @@ function findNextPending(fromIndex) {
   return null; // All answered
 }
 
-function normalizeAnswer(str) {
-  return str
-    .trim()
-    .toUpperCase()
-    .replace(/Ñ/g, '\x00')              // protect Ñ before NFD decomposition
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')    // strip other diacritics
-    .replace(/\x00/g, 'Ñ')             // restore Ñ
-    .replace(/[^A-ZÑ]/g, '');          // strip non-alpha (keeping Ñ)
-}
-
-function submitAnswer() {
+function markLetter(isCorrect) {
   if (state.phase !== 'playing') return;
 
-  const input    = $('answer-input');
-  const raw      = input.value;
-  const userAns  = normalizeAnswer(raw);
-  const word     = WORD_BANK[state.currentIndex];
-  const correct  = normalizeAnswer(word.answer);
-
-  // Prevent blank submissions
-  if (userAns === '') return;
-
-  input.value = '';
-  input.focus();
-
-  // Briefly disable buttons to prevent spam
-  $('btn-submit').disabled = true;
-  setTimeout(() => {
-    if (state.phase === 'playing') $('btn-submit').disabled = false;
-  }, 350);
-
+  const word   = WORD_BANK[state.currentIndex];
   const bubble = getBubble(state.currentIndex);
 
-  if (userAns === correct) {
-    // Correct
+  if (isCorrect) {
     word.status = 1;
     bubble.dataset.state = '1';
     bubble.classList.remove('active', 'wrong', 'flash-wrong');
     bubble.classList.add('correct');
-    void bubble.offsetWidth; // reflow to restart animation
+    void bubble.offsetWidth;
     bubble.classList.add('flash-correct');
     bubble.addEventListener('animationend', () => bubble.classList.remove('flash-correct'), { once: true });
-
     state.correctCount++;
     $('count-correct').textContent = state.correctCount;
     soundCorrect();
-    showFeedback('¡Correcto!', 'correct', 1400);
   } else {
-    // Wrong
     word.status = 2;
     bubble.dataset.state = '2';
     bubble.classList.remove('active', 'correct', 'flash-correct');
@@ -273,43 +228,18 @@ function submitAnswer() {
     void bubble.offsetWidth;
     bubble.classList.add('flash-wrong');
     bubble.addEventListener('animationend', () => bubble.classList.remove('flash-wrong'), { once: true });
-
     state.wrongCount++;
     $('count-wrong').textContent = state.wrongCount;
     soundWrong();
-    showFeedback(`Incorrecto — era: ${word.answer}`, 'wrong', 2200);
   }
 
-  // Deactivate current bubble (color already set by data-state)
   bubble.classList.remove('active');
+  updatePlayerRank();
 
-  // Check end conditions before advancing
   if (checkEndConditions()) return;
 
-  // Advance to next pending letter
   const next = findNextPending(state.currentIndex);
-  if (next === null) {
-    // No pending left — all answered
-    checkEndConditions();
-    return;
-  }
-  setActiveLetter(next);
-}
-
-function passWord() {
-  if (state.phase !== 'playing') return;
-
-  const next = findNextPending(state.currentIndex);
-
-  // Only one (or zero) pending letters remain — must answer or fail
-  if (next === null || next === state.currentIndex) {
-    showFeedback('¡Última letra! Debes responder o fallar.', 'wrong', 1800);
-    return;
-  }
-
-  $('answer-input').value = '';
-  $('answer-input').focus();
-  clearFeedback();
+  if (next === null) { checkEndConditions(); return; }
   setActiveLetter(next);
 }
 
@@ -348,7 +278,6 @@ function checkEndConditions() {
 function triggerWin() {
   state.phase = 'win';
   clearInterval(state.timerInterval);
-  stopWebcam();
   soundWin();
 
   const timeLeft = state.timeRemaining;
@@ -367,13 +296,6 @@ function triggerWin() {
 function triggerLoss(reason) {
   state.phase = 'loss';
   clearInterval(state.timerInterval);
-  stopWebcam();
-
-  // Disable input
-  $('answer-input').disabled   = true;
-  $('btn-submit').disabled     = true;
-  $('btn-pass').disabled       = true;
-
   soundGameOver();
 
   const pending = WORD_BANK.filter(e => e.status === 0).length;
@@ -501,29 +423,19 @@ function resumeGame() {
   state.phase = 'playing';
   $('pause-overlay').classList.remove('active');
   state.timerInterval = setInterval(tickTimer, 1000);
-  $('answer-input').focus();
 }
 
-// ── Feedback helpers ─────────────────────────────────────────────
-let feedbackTimer = null;
-
-function showFeedback(message, type, duration) {
-  const el = $('feedback');
-  clearTimeout(feedbackTimer);
-  el.textContent = message;
-  el.className   = type;
-
-  feedbackTimer = setTimeout(() => {
-    el.classList.add('hidden');
-    setTimeout(() => { el.textContent = ''; el.className = ''; }, 300);
-  }, duration);
+// ── Rank helpers ──────────────────────────────────────────────────
+function computeCurrentRank() {
+  const data = loadScores();
+  if (!data || !data.history.length) return null;
+  const better = data.history.filter(e => e.score > state.correctCount).length;
+  return better + 1;
 }
 
-function clearFeedback() {
-  clearTimeout(feedbackTimer);
-  const el = $('feedback');
-  el.textContent = '';
-  el.className   = '';
+function updatePlayerRank() {
+  const rank = computeCurrentRank();
+  $('player-bar-rank').textContent = rank !== null ? `#${rank}` : '';
 }
 
 // ── Storage ──────────────────────────────────────────────────────
@@ -583,31 +495,6 @@ function persistResult() {
   });
 }
 
-// ── Webcam ────────────────────────────────────────────────────────
-let webcamStream = null;
-
-async function startWebcam() {
-  if (!navigator.mediaDevices?.getUserMedia) return;
-  try {
-    webcamStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-    const video = $('webcam');
-    video.srcObject = webcamStream;
-    video.classList.add('active');
-  } catch {
-    // Permiso denegado o sin cámara — se ignora silenciosamente
-  }
-}
-
-function stopWebcam() {
-  if (webcamStream) {
-    webcamStream.getTracks().forEach(t => t.stop());
-    webcamStream = null;
-  }
-  const video = $('webcam');
-  video.srcObject = null;
-  video.classList.remove('active');
-}
-
 // ── Event wiring ─────────────────────────────────────────────────
 function bootstrap() {
   resetState();
@@ -618,20 +505,11 @@ function bootstrap() {
 
   $('btn-start').addEventListener('click', initGame);
 
-  $('btn-submit').addEventListener('click', submitAnswer);
-
-  $('btn-pass').addEventListener('click', passWord);
-
   $('btn-pause').addEventListener('click', pauseGame);
 
   $('btn-resume').addEventListener('click', resumeGame);
 
-  $('btn-restart').addEventListener('click', () => {
-    // Re-enable input in case it was disabled from a loss
-    $('answer-input').disabled = false;
-    stopWebcam();
-    showScreen('start');
-  });
+  $('btn-restart').addEventListener('click', () => showScreen('start'));
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
@@ -643,22 +521,12 @@ function bootstrap() {
 
     if (state.phase !== 'playing') return;
 
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      submitAnswer();
-    }
-
-    if (e.key === ' ' || e.code === 'Space') {
-      // Only trigger pass if the input is empty (prevent accidental passes while typing)
-      if ($('answer-input').value.trim() === '') {
-        e.preventDefault();
-        passWord();
-      }
-    }
+    if (e.key === 's' || e.key === 'S') { e.preventDefault(); markLetter(true);  }
+    if (e.key === 'n' || e.key === 'N') { e.preventDefault(); markLetter(false); }
   });
 
   window.addEventListener('resize', () => {
-    if (state.phase === 'playing') resizeRosco();
+    if (state.phase === 'playing' || state.phase === 'paused') resizeRosco();
   });
 }
 
