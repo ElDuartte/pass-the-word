@@ -52,32 +52,35 @@
       </div>
     </div>
 
-    <!-- Rosco container: ring + dashboard -->
+    <!-- Rosco container: ring + webcam in center -->
     <div id="rosco-wrapper">
       <div id="rosco-container">
         <!-- Bubbles are injected here by game.js -->
         <div id="rosco"></div>
 
-        <!-- Central dashboard -->
-        <div id="dashboard">
-          <div id="current-letter-label">?</div>
-          <p id="clue-text">Press Start to begin...</p>
-          <input
-            id="answer-input"
-            type="text"
-            autocomplete="off"
-            autocorrect="off"
-            autocapitalize="off"
-            spellcheck="false"
-            placeholder="Escribe tu respuesta..."
-          />
-          <div id="btn-row">
-            <button id="btn-submit" class="btn btn-submit">Enviar <kbd>↵</kbd></button>
-            <button id="btn-pass" class="btn btn-pass">Pasar <kbd>␣</kbd></button>
-          </div>
-          <div id="feedback"></div>
-        </div>
+        <!-- Webcam fills the center circle -->
+        <video id="webcam" autoplay playsinline muted></video>
       </div>
+    </div>
+
+    <!-- Dashboard card — below the ring -->
+    <div id="dashboard">
+      <div id="current-letter-label">?</div>
+      <p id="clue-text">Pulsa Empezar para comenzar...</p>
+      <input
+        id="answer-input"
+        type="text"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="Escribe tu respuesta..."
+      />
+      <div id="btn-row">
+        <button id="btn-submit" class="btn btn-submit">Enviar <kbd>↵</kbd></button>
+        <button id="btn-pass" class="btn btn-pass">Pasar <kbd>␣</kbd></button>
+      </div>
+      <div id="feedback"></div>
     </div>
 
   </div>

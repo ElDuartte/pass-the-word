@@ -131,18 +131,25 @@ function getBubble(index) {
 
 // ── Responsive scaling ───────────────────────────────────────────
 function resizeRosco() {
-  const container  = $('rosco-container');
-  const hud        = $('hud');
-  const hudHeight  = hud.offsetHeight || 64;
-  const available  = Math.min(
+  const container   = $('rosco-container');
+  const hud         = $('hud');
+  const dashboard   = $('dashboard');
+  const hudHeight   = hud.offsetHeight || 64;
+  const dashHeight  = dashboard.offsetHeight || 130;
+  const available   = Math.min(
     window.innerWidth - 32,
-    window.innerHeight - hudHeight - 24
+    window.innerHeight - hudHeight - dashHeight - 24
   );
-  const scale      = Math.min(1, available / ROSCO_SIZE);
+  const scale = Math.min(1, available / ROSCO_SIZE);
 
   container.style.transform       = `scale(${scale})`;
   container.style.transformOrigin = 'top center';
-  hud.style.width                 = `${ROSCO_SIZE * scale}px`;
+  // Collapse the empty layout space that transform: scale leaves behind
+  container.style.marginBottom    = `-${ROSCO_SIZE * (1 - scale)}px`;
+
+  const scaledWidth = `${ROSCO_SIZE * scale}px`;
+  hud.style.width       = scaledWidth;
+  dashboard.style.width = scaledWidth;
 }
 
 // ── Game flow ────────────────────────────────────────────────────
@@ -159,6 +166,7 @@ function initGame() {
   // Show game screen
   showScreen('game');
   resizeRosco();
+  startWebcam();
 
   // Reset HUD
   $('count-correct').textContent = '0';
@@ -340,6 +348,7 @@ function checkEndConditions() {
 function triggerWin() {
   state.phase = 'win';
   clearInterval(state.timerInterval);
+  stopWebcam();
   soundWin();
 
   const timeLeft = state.timeRemaining;
@@ -358,6 +367,7 @@ function triggerWin() {
 function triggerLoss(reason) {
   state.phase = 'loss';
   clearInterval(state.timerInterval);
+  stopWebcam();
 
   // Disable input
   $('answer-input').disabled   = true;
@@ -508,6 +518,31 @@ function persistResult() {
   });
 }
 
+// ── Webcam ────────────────────────────────────────────────────────
+let webcamStream = null;
+
+async function startWebcam() {
+  if (!navigator.mediaDevices?.getUserMedia) return;
+  try {
+    webcamStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    const video = $('webcam');
+    video.srcObject = webcamStream;
+    video.classList.add('active');
+  } catch {
+    // Permiso denegado o sin cámara — se ignora silenciosamente
+  }
+}
+
+function stopWebcam() {
+  if (webcamStream) {
+    webcamStream.getTracks().forEach(t => t.stop());
+    webcamStream = null;
+  }
+  const video = $('webcam');
+  video.srcObject = null;
+  video.classList.remove('active');
+}
+
 // ── Event wiring ─────────────────────────────────────────────────
 function bootstrap() {
   resetState();
@@ -525,6 +560,7 @@ function bootstrap() {
   $('btn-restart').addEventListener('click', () => {
     // Re-enable input in case it was disabled from a loss
     $('answer-input').disabled = false;
+    stopWebcam();
     showScreen('start');
   });
 

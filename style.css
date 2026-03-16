@@ -300,24 +300,21 @@ kbd {
   80%       { transform: translateX(5px); }
 }
 
-/* ── Dashboard (center of ring) ──────────────────────────────── */
+/* ── Dashboard (tarjeta debajo del rosco) ────────────────────── */
 #dashboard {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 240px;
+  width: var(--rosco-size);
+  max-width: calc(100vw - 32px);
   background: rgba(6, 7, 26, 0.85);
   border: 1px solid var(--surface-border);
   border-radius: 18px;
-  padding: 18px 16px 14px;
+  padding: 14px 16px 12px;
   text-align: center;
   backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  z-index: 5;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 #current-letter-label {
@@ -556,9 +553,9 @@ h2.loss { color: #cf4e4e; }
   }
 
   #dashboard {
-    padding: 14px 12px 10px;
-    gap: 8px;
-    width: 210px;
+    padding: 12px 12px 10px;
+    gap: 6px;
+    margin-top: 6px;
   }
 
   #current-letter-label {
@@ -574,9 +571,9 @@ h2.loss { color: #cf4e4e; }
 
 @media (max-width: 400px) {
   #dashboard {
-    width: 190px;
     padding: 10px 10px 8px;
-    gap: 6px;
+    gap: 5px;
+    margin-top: 4px;
   }
 
   #current-letter-label {
@@ -586,6 +583,27 @@ h2.loss { color: #cf4e4e; }
   #clue-text {
     font-size: 0.72rem;
   }
+}
+
+/* ── Webcam (círculo central del rosco) ──────────────────────── */
+#webcam {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* mirror + center */
+  transform: translate(-50%, -50%) scaleX(-1);
+  width: 410px;
+  height: 410px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--surface-border);
+  background: #111;
+  z-index: 5;
+  display: none;
+}
+
+#webcam.active {
+  display: block;
 }
 
 /* ── Background decoration ───────────────────────────────────── */
