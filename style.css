@@ -286,6 +286,26 @@ kbd {
   height: 100%;
 }
 
+/* ── Webcam ──────────────────────────────────────────────────── */
+#webcam {
+  position: absolute;
+  width: 465px;
+  height: 465px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  object-fit: cover;
+  display: none;
+  z-index: 0;
+  border: 3px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 40px 8px rgba(0, 0, 0, 0.6);
+}
+
+#webcam.active {
+  display: block;
+}
+
 /* ── Bubbles ─────────────────────────────────────────────────── */
 .bubble {
   position: absolute;

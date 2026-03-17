@@ -153,6 +153,30 @@ function resizeRosco() {
   playerBar.style.width  = scaledWidth;
 }
 
+// ── Webcam ───────────────────────────────────────────────────────
+let webcamStream = null;
+
+async function startWebcam() {
+  try {
+    webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    const video = $('webcam');
+    video.srcObject = webcamStream;
+    video.classList.add('active');
+  } catch {
+    // Permission denied or no camera — play without it
+  }
+}
+
+function stopWebcam() {
+  if (webcamStream) {
+    webcamStream.getTracks().forEach(t => t.stop());
+    webcamStream = null;
+  }
+  const video = $('webcam');
+  video.srcObject = null;
+  video.classList.remove('active');
+}
+
 // ── Game flow ────────────────────────────────────────────────────
 
 function initGame() {
@@ -182,6 +206,9 @@ function initGame() {
   // Highlight first letter
   state.currentIndex = 0;
   setActiveLetter(0);
+
+  // Start webcam
+  startWebcam();
 
   // Start timer
   state.timerInterval = setInterval(tickTimer, 1000);
@@ -278,6 +305,7 @@ function checkEndConditions() {
 function triggerWin() {
   state.phase = 'win';
   clearInterval(state.timerInterval);
+  stopWebcam();
   soundWin();
 
   const timeLeft = state.timeRemaining;
@@ -296,6 +324,7 @@ function triggerWin() {
 function triggerLoss(reason) {
   state.phase = 'loss';
   clearInterval(state.timerInterval);
+  stopWebcam();
   soundGameOver();
 
   const pending = WORD_BANK.filter(e => e.status === 0).length;
