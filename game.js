@@ -1,11 +1,9 @@
 'use strict';
 
 // ── Constants ────────────────────────────────────────────────────
-const ROSCO_SIZE       = 700;   // logical px (matches --rosco-size in CSS)
-const ROSCO_RADIUS     = 265;   // px from center to bubble center
-const BUBBLE_SIZE      = 58;    // px diameter (matches --bubble-size in CSS)
-const TIMER_START      = 150;   // seconds
-const URGENT_THRESHOLD = 30;    // seconds at which tick sound + red timer kick in
+const ROSCO_SIZE       = 1050;  // logical px (matches --rosco-size in CSS)
+const ROSCO_RADIUS     = 397.5; // px from center to bubble center (scales with rosco)
+const BUBBLE_SIZE      = 87;    // px diameter (matches --bubble-size in CSS)
 
 // ── State ────────────────────────────────────────────────────────
 let state = {};
@@ -14,8 +12,6 @@ function resetState() {
   state = {
     phase:         'start',   // 'start' | 'playing' | 'win' | 'loss'
     currentIndex:  0,
-    timeRemaining: TIMER_START,
-    timerInterval: null,
     correctCount:  0,
     wrongCount:    0,
   };
@@ -66,10 +62,6 @@ function soundCorrect() {
 function soundWrong() {
   playTone({ frequency: 220, type: 'sawtooth', duration: 0.25, gain: 0.22 });               // A3
   playTone({ frequency: 185, type: 'sawtooth', duration: 0.18, gain: 0.18, delay: 0.18 }); // lower
-}
-
-function soundTick() {
-  playTone({ frequency: 1100, type: 'square', duration: 0.045, gain: 0.12 });
 }
 
 function soundGameOver() {
@@ -138,11 +130,17 @@ function resizeRosco() {
   const hudHeight  = hud.offsetHeight || 64;
   const barHeight  = playerBar.offsetHeight || 28;
   const hintHeight = keyHint.offsetHeight || 32;
+  const vv         = window.visualViewport;
+  const vh         = vv ? vv.height : window.innerHeight;
+  const vw         = vv ? vv.width : window.innerWidth;
+  /* .screen padding 16×2, #screen-game padding-top, extra slack — no page scroll */
+  const verticalChrome = 32 + 6 + 28;
+  const horizontalChrome = 32;
   const available  = Math.min(
-    window.innerWidth - 32,
-    window.innerHeight - hudHeight - barHeight - hintHeight - 24
+    vw - horizontalChrome,
+    vh - hudHeight - barHeight - hintHeight - verticalChrome
   );
-  const scale = Math.min(1, available / ROSCO_SIZE);
+  const scale = Math.min(1, Math.max(0.05, available / ROSCO_SIZE));
 
   container.style.transform       = `scale(${scale})`;
   container.style.transformOrigin = 'top center';
@@ -151,6 +149,7 @@ function resizeRosco() {
   const scaledWidth = `${ROSCO_SIZE * scale}px`;
   hud.style.width        = scaledWidth;
   playerBar.style.width  = scaledWidth;
+  keyHint.style.width    = scaledWidth;
 }
 
 // ── Webcam ───────────────────────────────────────────────────────
@@ -195,8 +194,6 @@ function initGame() {
   // Reset HUD
   $('count-correct').textContent = '0';
   $('count-wrong').textContent   = '0';
-  $('timer-value').textContent   = TIMER_START;
-  $('timer-display').classList.remove('urgent');
 
   // Player bar
   const name = loadPlayerName() || 'Anónimo';
@@ -209,9 +206,6 @@ function initGame() {
 
   // Start webcam
   startWebcam();
-
-  // Start timer
-  state.timerInterval = setInterval(tickTimer, 1000);
 }
 
 function setActiveLetter(index) {
@@ -270,22 +264,6 @@ function markLetter(isCorrect) {
   setActiveLetter(next);
 }
 
-function tickTimer() {
-  if (state.phase !== 'playing') return;
-
-  state.timeRemaining--;
-  $('timer-value').textContent = state.timeRemaining;
-
-  if (state.timeRemaining <= URGENT_THRESHOLD) {
-    $('timer-display').classList.add('urgent');
-    soundTick();
-  }
-
-  if (state.timeRemaining <= 0) {
-    triggerLoss('timeout');
-  }
-}
-
 function checkEndConditions() {
   if (state.correctCount === WORD_BANK.length) {
     triggerWin();
@@ -295,7 +273,7 @@ function checkEndConditions() {
   // Check if any letters are still pending
   const pending = WORD_BANK.filter(e => e.status === 0).length;
   if (pending === 0 && state.correctCount < WORD_BANK.length) {
-    triggerLoss('all_answered');
+    triggerLoss();
     return true;
   }
 
@@ -304,40 +282,28 @@ function checkEndConditions() {
 
 function triggerWin() {
   state.phase = 'win';
-  clearInterval(state.timerInterval);
   stopWebcam();
   soundWin();
-
-  const timeLeft = state.timeRemaining;
 
   $('end-icon').textContent   = '🏆';
   $('end-title').textContent  = '¡Has ganado!';
   $('end-title').className    = 'win';
-  $('end-summary').textContent =
-    `¡Impresionante! Las 26 palabras correctas con ${timeLeft} segundo${timeLeft !== 1 ? 's' : ''} de sobra.`;
+  $('end-summary').textContent = '¡Impresionante! Las 26 palabras correctas.';
 
   persistResult();
   renderEndStats();
   setTimeout(() => showScreen('end'), 600);
 }
 
-function triggerLoss(reason) {
+function triggerLoss() {
   state.phase = 'loss';
-  clearInterval(state.timerInterval);
   stopWebcam();
   soundGameOver();
 
-  const pending = WORD_BANK.filter(e => e.status === 0).length;
+  const summary = `Respondiste las 26 palabras, pero solo acertaste ${state.correctCount}.`;
 
-  let summary;
-  if (reason === 'timeout') {
-    summary = `¡Se acabó el tiempo! Respondiste ${WORD_BANK.length - pending} de 26 palabras.`;
-  } else {
-    summary = `Respondiste las 26 palabras, pero solo acertaste ${state.correctCount}.`;
-  }
-
-  $('end-icon').textContent   = '💀';
-  $('end-title').textContent  = 'Fin del juego';
+  $('end-icon').textContent   = '👍';
+  $('end-title').textContent  = 'Bien hecho';
   $('end-title').className    = 'loss';
   $('end-summary').textContent = summary;
 
@@ -353,11 +319,11 @@ function renderEndStats() {
   const statsHTML = `
     <div class="stat-block">
       <span class="stat-number correct">${state.correctCount}</span>
-      <span class="stat-label">Aciertos</span>
+      <span class="stat-label">Bien</span>
     </div>
     <div class="stat-block">
       <span class="stat-number wrong">${state.wrongCount}</span>
-      <span class="stat-label">Errores</span>
+      <span class="stat-label">Mal</span>
     </div>
     <div class="stat-block">
       <span class="stat-number pending">${pending}</span>
@@ -372,17 +338,16 @@ function renderEndStats() {
 
   // ¿Esta partida es el nuevo récord?
   const esRecord = best
-    && best.score    === state.correctCount
-    && best.timeLeft === state.timeRemaining
-    && best.date     === data.history[data.history.length - 1]?.date;
+    && best.score === state.correctCount
+    && best.date === data.history[data.history.length - 1]?.date;
 
   const personalHTML = best ? `
     <div id="end-personal">
       <span class="personal-name">Jugando como: <strong>${name}</strong></span>
       <span class="personal-best ${esRecord ? 'new-record' : ''}">
         ${esRecord
-          ? '🏅 ¡Nuevo récord personal! ' + best.score + ' aciertos'
-          : 'Mejor marca personal: ' + best.score + ' aciertos'}
+          ? '🏅 ¡Nuevo récord personal! ' + best.score + ' bien'
+          : 'Mejor marca personal: ' + best.score + ' bien'}
       </span>
     </div>
   ` : '';
@@ -401,7 +366,7 @@ function renderLeaderboard(elId, currentDate) {
   if (!data || !data.history.length) { el.innerHTML = ''; return; }
 
   const sorted = [...data.history]
-    .sort((a, b) => b.score - a.score || b.timeLeft - a.timeLeft)
+    .sort((a, b) => b.score - a.score || new Date(b.date) - new Date(a.date))
     .slice(0, 10);
 
   const rows = sorted.map((entry, i) => {
@@ -414,7 +379,6 @@ function renderLeaderboard(elId, currentDate) {
         <td class="lb-pos">${pos}</td>
         <td>${entry.name || 'Anónimo'}</td>
         <td>${entry.score}</td>
-        <td>${entry.timeLeft}s</td>
         <td class="${outcomeClass}">${outcomeIcon}</td>
         <td>${fecha}</td>
       </tr>`;
@@ -428,7 +392,6 @@ function renderLeaderboard(elId, currentDate) {
           <th>#</th>
           <th>Nombre</th>
           <th>✓</th>
-          <th>Tiempo</th>
           <th>Res.</th>
           <th>Fecha</th>
         </tr>
@@ -441,8 +404,6 @@ function renderLeaderboard(elId, currentDate) {
 function pauseGame() {
   if (state.phase !== 'playing') return;
   state.phase = 'paused';
-  clearInterval(state.timerInterval);
-  state.timerInterval = null;
   renderLeaderboard('pause-leaderboard', null);
   $('pause-overlay').classList.add('active');
 }
@@ -451,7 +412,6 @@ function resumeGame() {
   if (state.phase !== 'paused') return;
   state.phase = 'playing';
   $('pause-overlay').classList.remove('active');
-  state.timerInterval = setInterval(tickTimer, 1000);
 }
 
 // ── Rank helpers ──────────────────────────────────────────────────
@@ -471,6 +431,7 @@ function updatePlayerRank() {
 const STORAGE_KEYS = {
   playerName: 'ptw_player_name',
   scores:     'ptw_scores',
+  theme:      'ptw_theme',
 };
 
 function loadPlayerName() {
@@ -496,9 +457,7 @@ function saveScore(entry) {
 
     // Determina si esta entrada es mejor que el récord actual
     const b = data.best;
-    const esMejor = !b
-      || entry.score > b.score
-      || (entry.score === b.score && entry.timeLeft > b.timeLeft);
+    const esMejor = !b || entry.score > b.score;
 
     if (esMejor) data.best = entry;
     data.history.push(entry);
@@ -517,16 +476,44 @@ function persistResult() {
     correct:  state.correctCount,
     wrong:    state.wrongCount,
     skipped:  pending,
-    timeLeft: state.timeRemaining,
     outcome:  state.phase,          // 'win' | 'loss'
     score:    state.correctCount,   // campo canónico para tabla de líderes
     date:     new Date().toISOString(),
   });
 }
 
+// ── Theme ───────────────────────────────────────────────────────
+function applyTheme(theme) {
+  const dark = theme === 'dark';
+  const root = document.documentElement;
+  if (dark) root.dataset.theme = 'dark';
+  else root.removeAttribute('data-theme');
+
+  const toggle = $('theme-toggle');
+  if (toggle) toggle.setAttribute('aria-checked', dark ? 'true' : 'false');
+
+  try {
+    localStorage.setItem(STORAGE_KEYS.theme, dark ? 'dark' : 'light');
+  } catch { /* silencioso */ }
+}
+
+function loadTheme() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEYS.theme);
+    if (s === 'light' || s === 'dark') return s;
+  } catch { /* ignore */ }
+  return 'light';
+}
+
+function toggleTheme() {
+  applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+}
+
 // ── Event wiring ─────────────────────────────────────────────────
 function bootstrap() {
   resetState();
+
+  applyTheme(loadTheme());
 
   // Pre-rellenar nombre si ya existe en storage
   const savedName = loadPlayerName();
@@ -538,7 +525,12 @@ function bootstrap() {
 
   $('btn-resume').addEventListener('click', resumeGame);
 
+  $('theme-toggle').addEventListener('click', () => toggleTheme());
+
   $('btn-restart').addEventListener('click', () => showScreen('start'));
+
+  $('btn-mark-correct').addEventListener('click', () => markLetter(true));
+  $('btn-mark-wrong').addEventListener('click', () => markLetter(false));
 
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
@@ -554,9 +546,13 @@ function bootstrap() {
     if (e.key === 'n' || e.key === 'N') { e.preventDefault(); markLetter(false); }
   });
 
-  window.addEventListener('resize', () => {
+  const onViewportResize = () => {
     if (state.phase === 'playing' || state.phase === 'paused') resizeRosco();
-  });
+  };
+  window.addEventListener('resize', onViewportResize);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', onViewportResize);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', bootstrap);

@@ -4,9 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pasapalabra</title>
+  <link rel="icon" href="Logo.ico" type="image/x-icon">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+  <img
+    id="site-logo"
+    src="Logo_Negativo_Casa%20de%20la%20Virgen_Colegi-1.png"
+    alt="Casa de la Virgen"
+    width="1000"
+    height="750"
+    decoding="async"
+  />
 
   <!-- SCREEN: Start -->
   <div id="screen-start" class="screen active">
@@ -16,7 +26,7 @@
       <ul class="rules">
         <li>26 letras, 26 definiciones — responde cada palabra que empiece por la letra resaltada.</li>
         <li>Pulsa <kbd>Enter</kbd> para enviar, <kbd>Espacio</kbd> para pasar cuando el campo esté vacío.</li>
-        <li>Tienes <strong>150 segundos</strong>. ¡Acierta las 26 para ganar!</li>
+        <li>¡Acierta las 26 para ganar!</li>
       </ul>
       <div class="name-field">
         <label for="input-player-name">Tu nombre</label>
@@ -39,16 +49,12 @@
     <!-- HUD -->
     <div id="hud">
       <div id="score-correct">
-        <span class="hud-label">Aciertos</span>
+        <span class="hud-label">Bien</span>
         <span id="count-correct" class="hud-value correct">0</span>
-      </div>
-      <div id="timer-display">
-        <span id="timer-value">150</span>
-        <span class="hud-label">seg</span>
       </div>
       <div class="hud-right">
         <div id="score-wrong">
-          <span class="hud-label">Errores</span>
+          <span class="hud-label">Mal</span>
           <span id="count-wrong" class="hud-value wrong">0</span>
         </div>
         <button id="btn-pause" class="btn" aria-label="Pausar">⏸</button>
@@ -66,6 +72,17 @@
       <div class="pause-card">
         <h3 class="pause-title">Pausa</h3>
         <div id="pause-leaderboard"></div>
+        <div class="pause-theme" role="group" aria-labelledby="theme-toggle-label">
+          <span id="theme-toggle-label" class="pause-theme-label">Modo oscuro</span>
+          <button
+            type="button"
+            id="theme-toggle"
+            class="theme-toggle"
+            role="switch"
+            aria-checked="false"
+            aria-labelledby="theme-toggle-label"
+          ></button>
+        </div>
         <button id="btn-resume" class="btn btn-primary">Continuar <kbd>Esc</kbd></button>
       </div>
     </div>
@@ -80,7 +97,15 @@
 
     <!-- Key hint -->
     <div id="key-hint">
-      <kbd>S</kbd> Correcto &ensp;·&ensp; <kbd>N</kbd> Incorrecto
+      <span class="key-hint-group">
+        <button type="button" id="btn-mark-correct" class="key-hint-btn" aria-label="Correcto (tecla S)" aria-keyshortcuts="S" title="Tecla S">S</button>
+        Correcto
+      </span>
+      <span class="key-hint-sep">&ensp;·&ensp;</span>
+      <span class="key-hint-group">
+        <button type="button" id="btn-mark-wrong" class="key-hint-btn" aria-label="Incorrecto (tecla N)" aria-keyshortcuts="N" title="Tecla N">N</button>
+        Incorrecto
+      </span>
     </div>
 
   </div>
@@ -89,7 +114,7 @@
   <div id="screen-end" class="screen">
     <div class="end-card">
       <div id="end-icon"></div>
-      <h2 id="end-title">Fin del juego</h2>
+      <h2 id="end-title">Bien hecho</h2>
       <p id="end-summary"></p>
       <div id="end-stats"></div>
       <div id="end-leaderboard"></div>
