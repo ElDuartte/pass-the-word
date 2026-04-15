@@ -475,6 +475,55 @@ kbd {
   transition: background-color 0.35s ease, color 0.35s ease,
               transform 0.2s ease, box-shadow 0.2s ease,
               border-color 0.2s ease;
+  overflow: visible;
+  isolation: isolate;
+}
+
+/* Hidden by default: rainbow ring used for correct letters */
+.bubble::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: conic-gradient(
+    #ff004c,
+    #ff7a00,
+    #ffe600,
+    #34d399,
+    #00c2ff,
+    #7c3aed,
+    #ff00a8,
+    #ff004c
+  );
+  opacity: 0;
+  z-index: -1;
+  pointer-events: none;
+  transform: rotate(0deg);
+  transition: opacity 0.2s ease;
+  /* Keep rainbow only on the border ring, never the inside fill */
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+}
+
+/* Hidden by default: one-shot firework burst around correct letters */
+.bubble::before {
+  content: '';
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  transform: scale(0.55);
+  background:
+    radial-gradient(circle at 50% 2%,  #ffd166 0 3px, transparent 4px),
+    radial-gradient(circle at 82% 18%, #ff7a00 0 3px, transparent 4px),
+    radial-gradient(circle at 98% 50%, #ff004c 0 3px, transparent 4px),
+    radial-gradient(circle at 82% 82%, #7c3aed 0 3px, transparent 4px),
+    radial-gradient(circle at 50% 98%, #00c2ff 0 3px, transparent 4px),
+    radial-gradient(circle at 18% 82%, #34d399 0 3px, transparent 4px),
+    radial-gradient(circle at 2% 50%,  #ffe600 0 3px, transparent 4px),
+    radial-gradient(circle at 18% 18%, #ff00a8 0 3px, transparent 4px);
 }
 
 /* State colors — driven by both data-state attribute and semantic classes */
@@ -488,7 +537,20 @@ kbd {
 .bubble.correct {
   background: var(--green);
   color: #1a4d32;
-  border-color: rgba(26, 77, 50, 0.28);
+  border-color: transparent;
+}
+
+.bubble[data-state="3"] {
+  background: #6f8fcf;
+  color: var(--gold);
+  border-color: rgba(111, 143, 207, 0.65);
+}
+
+.bubble[data-state="1"]::after,
+.bubble.correct::after,
+.bubble.flash-correct::after {
+  opacity: 1;
+  animation: rainbow-spin 1s linear infinite;
 }
 
 .bubble[data-state="2"],
@@ -510,7 +572,11 @@ kbd {
 
 /* Flash animations */
 .bubble.flash-correct {
-  animation: flash-correct 0.5s ease forwards;
+  animation: flash-correct 0.5s ease forwards, correct-pop 0.45s ease;
+}
+
+.bubble.flash-correct::before {
+  animation: firework-burst 0.65s ease-out forwards;
 }
 
 .bubble.flash-wrong {
@@ -521,6 +587,35 @@ kbd {
   0%   { box-shadow: 0 0 0px 0px transparent; }
   40%  { box-shadow: 0 0 42px 15px var(--flash-correct-glow); }
   100% { box-shadow: 0 0 0px 0px transparent; }
+}
+
+@keyframes correct-pop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes rainbow-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes firework-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+    filter: blur(0);
+  }
+  28% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.28);
+    filter: blur(0.6px);
+  }
 }
 
 @keyframes flash-wrong {
@@ -539,7 +634,7 @@ kbd {
 [data-theme="dark"] .bubble[data-state="1"],
 [data-theme="dark"] .bubble.correct {
   color: #0c3020;
-  border-color: rgba(125, 206, 181, 0.45);
+  border-color: transparent;
 }
 
 [data-theme="dark"] .bubble[data-state="2"],

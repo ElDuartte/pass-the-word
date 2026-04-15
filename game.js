@@ -19,6 +19,7 @@ function resetState() {
     correctCount:  0,
     wrongCount:    0,
     timeLeft:      ROUND_SECONDS,
+    answerActions: [],
   };
 }
 
@@ -117,7 +118,7 @@ function buildRosco() {
     div.className          = 'bubble';
     div.textContent        = entry.letter;
     div.dataset.index      = i;
-    div.dataset.state      = entry.status; // 0=pending, 1=correct, 2=wrong
+    div.dataset.state      = entry.status; // 0=pending, 1=correct, 2=wrong, 3=pasapalabra
     div.style.left         = `${left}px`;
     div.style.top          = `${top}px`;
     div.style.width        = `${BUBBLE_SIZE}px`;
@@ -129,6 +130,10 @@ function buildRosco() {
 
 function getBubble(index) {
   return $('rosco').querySelector(`.bubble[data-index="${index}"]`);
+}
+
+function isUnresolvedLetter(status) {
+  return status === 0 || status === 3; // 0=pending, 3=pasapalabra
 }
 
 // ── Responsive scaling ───────────────────────────────────────────
@@ -299,7 +304,7 @@ function findNextPending(fromIndex) {
   const len = WORD_BANK.length;
   for (let i = 1; i <= len; i++) {
     const idx = (fromIndex + i) % len;
-    if (WORD_BANK[idx].status === 0) return idx;
+    if (isUnresolvedLetter(WORD_BANK[idx].status)) return idx;
   }
   return null; // All answered
 }
@@ -309,9 +314,13 @@ function markLetter(isCorrect) {
 
   const word   = WORD_BANK[state.currentIndex];
   const bubble = getBubble(state.currentIndex);
+  const answeredIndex = state.currentIndex;
+  const previousStatus = word.status;
+  let nextStatus;
 
   if (isCorrect) {
-    word.status = 1;
+    nextStatus = 1;
+    word.status = nextStatus;
     bubble.dataset.state = '1';
     bubble.classList.remove('active', 'wrong', 'flash-wrong');
     bubble.classList.add('correct');
@@ -322,7 +331,8 @@ function markLetter(isCorrect) {
     $('count-correct').textContent = state.correctCount;
     soundCorrect();
   } else {
-    word.status = 2;
+    nextStatus = 2;
+    word.status = nextStatus;
     bubble.dataset.state = '2';
     bubble.classList.remove('active', 'correct', 'flash-correct');
     bubble.classList.add('wrong');
@@ -333,6 +343,12 @@ function markLetter(isCorrect) {
     $('count-wrong').textContent = state.wrongCount;
     soundWrong();
   }
+
+  state.answerActions.push({
+    index: answeredIndex,
+    fromStatus: previousStatus,
+    toStatus: nextStatus,
+  });
 
   bubble.classList.remove('active');
   updatePlayerRank();
@@ -346,6 +362,21 @@ function markLetter(isCorrect) {
 
 function passLetter() {
   if (state.phase !== 'playing') return;
+  const word = WORD_BANK[state.currentIndex];
+  const bubble = getBubble(state.currentIndex);
+  const passedIndex = state.currentIndex;
+  const previousStatus = word.status;
+
+  if (word.status === 0 && bubble) {
+    word.status = 3; // Pasapalabra state (still unresolved)
+    bubble.dataset.state = '3';
+    state.answerActions.push({
+      index: passedIndex,
+      fromStatus: previousStatus,
+      toStatus: 3,
+    });
+  }
+
   const next = findNextPending(state.currentIndex);
   if (next !== null) {
     setActiveLetter(next);
@@ -355,29 +386,35 @@ function passLetter() {
 
 function goBackLetter() {
   if (state.phase !== 'playing') return;
-  if (state.correctCount + state.wrongCount === 0) return;
+  const lastAction = state.answerActions.pop();
+  if (!lastAction) return;
 
-  const len = WORD_BANK.length;
-  const previous = (state.currentIndex - 1 + len) % len;
-  const word = WORD_BANK[previous];
-  const bubble = getBubble(previous);
-  const hadAnswer = word.status !== 0;
+  const word = WORD_BANK[lastAction.index];
+  const bubble = getBubble(lastAction.index);
 
-  if (word.status === 1) {
+  if (lastAction.toStatus === 1) {
     state.correctCount = Math.max(0, state.correctCount - 1);
     $('count-correct').textContent = state.correctCount;
-  } else if (word.status === 2) {
+  } else if (lastAction.toStatus === 2) {
     state.wrongCount = Math.max(0, state.wrongCount - 1);
     $('count-wrong').textContent = state.wrongCount;
   }
 
+  word.status = lastAction.fromStatus;
+  if (lastAction.fromStatus === 1) {
+    state.correctCount++;
+    $('count-correct').textContent = state.correctCount;
+  } else if (lastAction.fromStatus === 2) {
+    state.wrongCount++;
+    $('count-wrong').textContent = state.wrongCount;
+  }
+
   if (bubble) {
-    word.status = 0;
-    bubble.dataset.state = '0';
+    bubble.dataset.state = String(lastAction.fromStatus);
     bubble.classList.remove('correct', 'wrong', 'flash-correct', 'flash-wrong');
   }
 
-  setActiveLetter(previous);
+  setActiveLetter(lastAction.index);
   state.timeLeft = Math.min(ROUND_SECONDS, state.timeLeft + 2);
   renderTimeLeft();
   updatePlayerRank();
@@ -396,7 +433,7 @@ function checkEndConditions() {
   }
 
   // Check if any letters are still pending
-  const pending = WORD_BANK.filter(e => e.status === 0).length;
+  const pending = WORD_BANK.filter(e => isUnresolvedLetter(e.status)).length;
   if (pending === 0 && state.correctCount < WORD_BANK.length) {
     triggerLoss();
     return true;
@@ -470,7 +507,7 @@ function startRoundTimer() {
 }
 
 function renderEndStats() {
-  const pending = WORD_BANK.filter(e => e.status === 0).length;
+  const pending = WORD_BANK.filter(e => isUnresolvedLetter(e.status)).length;
 
   // Estadísticas de la partida actual
   const statsHTML = `
@@ -627,7 +664,7 @@ function persistResult() {
   const name = ($('input-player-name').value.trim()) || 'Anónimo';
   savePlayerName(name);
 
-  const pending = WORD_BANK.filter(e => e.status === 0).length;
+  const pending = WORD_BANK.filter(e => isUnresolvedLetter(e.status)).length;
   saveScore({
     name,
     correct:  state.correctCount,
