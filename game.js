@@ -4,16 +4,21 @@
 const ROSCO_SIZE       = 1050;  // logical px (matches --rosco-size in CSS)
 const ROSCO_RADIUS     = 397.5; // px from center to bubble center (scales with rosco)
 const BUBBLE_SIZE      = 87;    // px diameter (matches --bubble-size in CSS)
+const ROUND_SECONDS    = 120;
+const PRE_START_SECONDS = 3;
 
 // ── State ────────────────────────────────────────────────────────
 let state = {};
+let roundTimerId = null;
 
 function resetState() {
+  stopRoundTimer();
   state = {
     phase:         'start',   // 'start' | 'playing' | 'win' | 'loss'
     currentIndex:  0,
     correctCount:  0,
     wrongCount:    0,
+    timeLeft:      ROUND_SECONDS,
   };
 }
 
@@ -62,6 +67,11 @@ function soundCorrect() {
 function soundWrong() {
   playTone({ frequency: 220, type: 'sawtooth', duration: 0.25, gain: 0.22 });               // A3
   playTone({ frequency: 185, type: 'sawtooth', duration: 0.18, gain: 0.18, delay: 0.18 }); // lower
+}
+
+function soundSkip() {
+  playTone({ frequency: 392, duration: 0.1, gain: 0.18 });
+  playTone({ frequency: 330, duration: 0.12, gain: 0.16, delay: 0.07 });
 }
 
 function soundGameOver() {
@@ -154,10 +164,38 @@ function resizeRosco() {
 
 // ── Webcam ───────────────────────────────────────────────────────
 let webcamStream = null;
+let webcamRequestPromise = null;
+let webcamPermissionDenied = false;
 
 async function startWebcam() {
   try {
-    webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    if (webcamStream) {
+      const video = $('webcam');
+      video.srcObject = webcamStream;
+      video.classList.add('active');
+      return;
+    }
+
+    if (webcamPermissionDenied) return;
+
+    if (!webcamRequestPromise) {
+      webcamRequestPromise = navigator.mediaDevices
+        .getUserMedia({ video: true, audio: false })
+        .then(stream => {
+          webcamStream = stream;
+          webcamPermissionDenied = false;
+        })
+        .catch(() => {
+          webcamPermissionDenied = true;
+        })
+        .finally(() => {
+          webcamRequestPromise = null;
+        });
+    }
+
+    await webcamRequestPromise;
+    if (!webcamStream) return;
+
     const video = $('webcam');
     video.srcObject = webcamStream;
     video.classList.add('active');
@@ -194,6 +232,7 @@ function initGame() {
   // Reset HUD
   $('count-correct').textContent = '0';
   $('count-wrong').textContent   = '0';
+  renderTimeLeft();
 
   // Player bar
   const name = loadPlayerName() || 'Anónimo';
@@ -204,8 +243,49 @@ function initGame() {
   state.currentIndex = 0;
   setActiveLetter(0);
 
+  // Start countdown
+  startRoundTimer();
+
   // Start webcam
   startWebcam();
+}
+
+async function runPreStartCountdown() {
+  if (state.phase === 'countdown') return false;
+
+  const startBtn = $('btn-start');
+  const numberEl = $('prestart-countdown-number');
+
+  state.phase = 'countdown';
+  startBtn.disabled = true;
+  showScreen('countdown');
+
+  let remaining = PRE_START_SECONDS;
+  numberEl.textContent = String(remaining);
+
+  const playTick = () => {
+    numberEl.classList.remove('tick');
+    void numberEl.offsetWidth;
+    numberEl.classList.add('tick');
+  };
+
+  playTick();
+
+  await new Promise(resolve => {
+    const intervalId = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(intervalId);
+        resolve();
+        return;
+      }
+      numberEl.textContent = String(remaining);
+      playTick();
+    }, 1000);
+  });
+
+  startBtn.disabled = false;
+  return true;
 }
 
 function setActiveLetter(index) {
@@ -264,7 +344,52 @@ function markLetter(isCorrect) {
   setActiveLetter(next);
 }
 
+function passLetter() {
+  if (state.phase !== 'playing') return;
+  const next = findNextPending(state.currentIndex);
+  if (next !== null) {
+    setActiveLetter(next);
+    soundSkip();
+  }
+}
+
+function goBackLetter() {
+  if (state.phase !== 'playing') return;
+  if (state.correctCount + state.wrongCount === 0) return;
+
+  const len = WORD_BANK.length;
+  const previous = (state.currentIndex - 1 + len) % len;
+  const word = WORD_BANK[previous];
+  const bubble = getBubble(previous);
+  const hadAnswer = word.status !== 0;
+
+  if (word.status === 1) {
+    state.correctCount = Math.max(0, state.correctCount - 1);
+    $('count-correct').textContent = state.correctCount;
+  } else if (word.status === 2) {
+    state.wrongCount = Math.max(0, state.wrongCount - 1);
+    $('count-wrong').textContent = state.wrongCount;
+  }
+
+  if (bubble) {
+    word.status = 0;
+    bubble.dataset.state = '0';
+    bubble.classList.remove('correct', 'wrong', 'flash-correct', 'flash-wrong');
+  }
+
+  setActiveLetter(previous);
+  state.timeLeft = Math.min(ROUND_SECONDS, state.timeLeft + 2);
+  renderTimeLeft();
+  updatePlayerRank();
+  soundSkip();
+}
+
 function checkEndConditions() {
+  if (state.timeLeft <= 0) {
+    triggerLoss('timeout');
+    return true;
+  }
+
   if (state.correctCount === WORD_BANK.length) {
     triggerWin();
     return true;
@@ -282,6 +407,7 @@ function checkEndConditions() {
 
 function triggerWin() {
   state.phase = 'win';
+  stopRoundTimer();
   stopWebcam();
   soundWin();
 
@@ -295,12 +421,15 @@ function triggerWin() {
   setTimeout(() => showScreen('end'), 600);
 }
 
-function triggerLoss() {
+function triggerLoss(reason = 'completed') {
   state.phase = 'loss';
+  stopRoundTimer();
   stopWebcam();
   soundGameOver();
 
-  const summary = `Respondiste las 26 palabras, pero solo acertaste ${state.correctCount}.`;
+  const summary = reason === 'timeout'
+    ? `Se acabó el tiempo. Acertaste ${state.correctCount} palabras.`
+    : `Respondiste las 26 palabras, pero solo acertaste ${state.correctCount}.`;
 
   $('end-icon').textContent   = '👍';
   $('end-title').textContent  = 'Bien hecho';
@@ -310,6 +439,34 @@ function triggerLoss() {
   persistResult();
   renderEndStats();
   setTimeout(() => showScreen('end'), 1200);
+}
+
+function renderTimeLeft() {
+  $('countdown').textContent = String(state.timeLeft);
+}
+
+function stopRoundTimer() {
+  if (roundTimerId !== null) {
+    clearInterval(roundTimerId);
+    roundTimerId = null;
+  }
+}
+
+function tickRoundTimer() {
+  if (state.phase !== 'playing') return;
+  if (state.timeLeft <= 0) return;
+
+  state.timeLeft -= 1;
+  renderTimeLeft();
+
+  if (state.timeLeft <= 0) {
+    triggerLoss('timeout');
+  }
+}
+
+function startRoundTimer() {
+  stopRoundTimer();
+  roundTimerId = setInterval(tickRoundTimer, 1000);
 }
 
 function renderEndStats() {
@@ -514,12 +671,17 @@ function bootstrap() {
   resetState();
 
   applyTheme(loadTheme());
+  // Ask webcam permission on the initial screen to avoid time loss during gameplay.
+  startWebcam();
 
   // Pre-rellenar nombre si ya existe en storage
   const savedName = loadPlayerName();
   if (savedName) $('input-player-name').value = savedName;
 
-  $('btn-start').addEventListener('click', initGame);
+  $('btn-start').addEventListener('click', async () => {
+    const shouldStart = await runPreStartCountdown();
+    if (shouldStart) initGame();
+  });
 
   $('btn-pause').addEventListener('click', pauseGame);
 
@@ -531,8 +693,18 @@ function bootstrap() {
 
   $('btn-mark-correct').addEventListener('click', () => markLetter(true));
   $('btn-mark-wrong').addEventListener('click', () => markLetter(false));
+  $('btn-pass').addEventListener('click', passLetter);
+  $('btn-back').addEventListener('click', goBackLetter);
 
   document.addEventListener('keydown', e => {
+    const handledKeys = new Set(['escape', 's', 'n', 'p', 'b']);
+    const key = e.key.toLowerCase();
+
+    if (e.repeat && handledKeys.has(key)) {
+      e.preventDefault();
+      return;
+    }
+
     if (e.key === 'Escape') {
       e.preventDefault();
       if (state.phase === 'paused') resumeGame();
@@ -544,6 +716,8 @@ function bootstrap() {
 
     if (e.key === 's' || e.key === 'S') { e.preventDefault(); markLetter(true);  }
     if (e.key === 'n' || e.key === 'N') { e.preventDefault(); markLetter(false); }
+    if (e.key === 'p' || e.key === 'P') { e.preventDefault(); passLetter();      }
+    if (e.key === 'b' || e.key === 'B') { e.preventDefault(); goBackLetter();    }
   });
 
   const onViewportResize = () => {

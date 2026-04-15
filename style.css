@@ -35,6 +35,7 @@
   /* Stronger than bubble pastels — counters & labels on light / blue bg */
   --counter-green: #156b43;
   --counter-red: #9c2828;
+  --page-bg: #add8e6;
 }
 
 /* Secondary = dark */
@@ -53,6 +54,7 @@
   --active-bubble-glow: rgba(206, 111, 38, 0.55);
   --counter-green: #b5f5d5;
   --counter-red: #ffc4c4;
+  --page-bg: #0e0d22;
 }
 
 html {
@@ -65,8 +67,7 @@ html, body {
 }
 
 body {
-  /* background: var(--bg); */
-  background:#add8e6;
+  background: var(--page-bg);
   color: var(--text);
   font-family: var(--font);
   max-height: 100vh;
@@ -167,6 +168,51 @@ h1 {
   color: var(--text);
 }
 
+/* ── Pre-start countdown ─────────────────────────────────────── */
+.countdown-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 20px;
+  padding: 40px 48px;
+  min-width: 280px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+
+.countdown-label {
+  color: var(--text-dim);
+  font-size: 1rem;
+  margin-bottom: 14px;
+}
+
+#prestart-countdown-number {
+  font-size: clamp(3.2rem, 10vw, 5.8rem);
+  line-height: 1;
+  font-weight: 900;
+  color: var(--gold);
+  letter-spacing: -1px;
+  text-shadow: 0 8px 26px rgba(0, 0, 0, 0.12);
+}
+
+#prestart-countdown-number.tick {
+  animation: countdown-pop 0.82s ease;
+}
+
+@keyframes countdown-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  22% {
+    transform: scale(1.14);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 /* ── Buttons ─────────────────────────────────────────────────── */
 .btn {
   border: none;
@@ -216,7 +262,8 @@ kbd {
 }
 
 #score-correct,
-#score-wrong {
+#score-wrong,
+#score-timer {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -252,7 +299,7 @@ kbd {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--page-bg);
   backdrop-filter: blur(6px);
   z-index: 100;
   align-items: center;
@@ -366,6 +413,7 @@ kbd {
 
 .hud-value.correct { color: var(--counter-green); }
 .hud-value.wrong   { color: var(--counter-red); }
+.hud-value.timer   { color: var(--gold); }
 
 /* ── Rosco (Ring) ────────────────────────────────────────────── */
 #rosco-wrapper {
@@ -512,10 +560,6 @@ kbd {
 
 [data-theme="dark"] .key-hint-btn:hover {
   background: rgba(255, 255, 255, 0.22);
-}
-
-[data-theme="dark"] #pause-overlay {
-  background: rgba(14, 13, 34, 0.88);
 }
 
 [data-theme="dark"] #site-logo {

@@ -22,11 +22,11 @@
   <div id="screen-start" class="screen active">
     <div class="start-card">
       <h1>Pasapalabra</h1>
-      <p class="subtitle">El juego de las letras</p>
+      <p class="subtitle">El juego de las letras contrarreloj</p>
       <ul class="rules">
-        <li>26 letras, 26 definiciones — responde cada palabra que empiece por la letra resaltada.</li>
-        <li>Pulsa <kbd>Enter</kbd> para enviar, <kbd>Espacio</kbd> para pasar cuando el campo esté vacío.</li>
-        <li>¡Acierta las 26 para ganar!</li>
+        <li>Tienes <strong>120 segundos</strong> para completar el rosco.</li>
+        <li>Usa <kbd>S</kbd> (correcto), <kbd>N</kbd> (incorrecto), <kbd>P</kbd> (Pasapalabra) y <kbd>B</kbd> (volver y deshacer).</li>
+        <li>Antes de empezar verás una cuenta atrás de <strong>3 segundos</strong>.</li>
       </ul>
       <div class="name-field">
         <label for="input-player-name">Tu nombre</label>
@@ -43,6 +43,14 @@
     </div>
   </div>
 
+  <!-- SCREEN: Pre-start countdown -->
+  <div id="screen-countdown" class="screen">
+    <div class="countdown-card">
+      <p class="countdown-label">Preparados...</p>
+      <div id="prestart-countdown-number" aria-live="polite" aria-atomic="true">3</div>
+    </div>
+  </div>
+
   <!-- SCREEN: Playing -->
   <div id="screen-game" class="screen">
 
@@ -51,6 +59,10 @@
       <div id="score-correct">
         <span class="hud-label">Bien</span>
         <span id="count-correct" class="hud-value correct">0</span>
+      </div>
+      <div id="score-timer">
+        <span class="hud-label">Segundos</span>
+        <span id="countdown" class="hud-value timer">120</span>
       </div>
       <div class="hud-right">
         <div id="score-wrong">
@@ -105,6 +117,16 @@
       <span class="key-hint-group">
         <button type="button" id="btn-mark-wrong" class="key-hint-btn" aria-label="Incorrecto (tecla N)" aria-keyshortcuts="N" title="Tecla N">N</button>
         Incorrecto
+      </span>
+      <span class="key-hint-sep">&ensp;·&ensp;</span>
+      <span class="key-hint-group">
+        <button type="button" id="btn-pass" class="key-hint-btn" aria-label="Pasapalabra (tecla P)" aria-keyshortcuts="P" title="Tecla P">P</button>
+        Pasapalabra
+      </span>
+      <span class="key-hint-sep">&ensp;·&ensp;</span>
+      <span class="key-hint-group">
+        <button type="button" id="btn-back" class="key-hint-btn" aria-label="Volver una letra (+2s) (tecla B)" aria-keyshortcuts="B" title="Tecla B">B</button>
+        Volver (+2s)
       </span>
     </div>
 
