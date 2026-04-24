@@ -422,8 +422,7 @@ function goBackLetter() {
 }
 
 function checkEndConditions() {
-  const counterEnabled = loadCounterSetting();
-  if (state.timeLeft <= 0 && counterEnabled) {
+  if (state.timeLeft <= 0) {
     triggerLoss('timeout');
     return true;
   }
@@ -728,9 +727,11 @@ function applyCounterSetting(enabled) {
   if (enabled) {
     timerEl.style.display = '';
     if (penaltyEl) penaltyEl.style.display = '';
+    if (state.phase === 'playing') startRoundTimer();
   } else {
     timerEl.style.display = 'none';
     if (penaltyEl) penaltyEl.style.display = 'none';
+    stopRoundTimer();
   }
   const toggle = $('counter-toggle');
   const toggleMain = $('counter-toggle-main');
