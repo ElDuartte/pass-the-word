@@ -626,6 +626,7 @@ const STORAGE_KEYS = {
   playerName: 'ptw_player_name',
   scores:     'ptw_scores',
   theme:      'ptw_theme',
+  counter:    'ptw_counter',
 };
 
 function loadPlayerName() {
@@ -684,7 +685,9 @@ function applyTheme(theme) {
   else root.removeAttribute('data-theme');
 
   const toggle = $('theme-toggle');
+  const toggleMain = $('theme-toggle-main');
   if (toggle) toggle.setAttribute('aria-checked', dark ? 'true' : 'false');
+  if (toggleMain) toggleMain.setAttribute('aria-checked', dark ? 'true' : 'false');
 
   try {
     localStorage.setItem(STORAGE_KEYS.theme, dark ? 'dark' : 'light');
@@ -703,11 +706,50 @@ function toggleTheme() {
   applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
 }
 
+function loadCounterSetting() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEYS.counter);
+    if (s === 'true') return true;
+    if (s === 'false') return false;
+  } catch { /* ignore */ }
+  return false; // Default: counter off
+}
+
+function saveCounterSetting(enabled) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.counter, String(enabled));
+  } catch { /* silencioso */ }
+}
+
+function applyCounterSetting(enabled) {
+  const timerEl = $('countdown').parentElement;
+  const penaltyEl = $('back-penalty');
+  if (enabled) {
+    timerEl.style.display = '';
+    if (penaltyEl) penaltyEl.style.display = '';
+  } else {
+    timerEl.style.display = 'none';
+    if (penaltyEl) penaltyEl.style.display = 'none';
+  }
+  const toggle = $('counter-toggle');
+  const toggleMain = $('counter-toggle-main');
+  if (toggle) toggle.setAttribute('aria-checked', enabled ? 'true' : 'false');
+  if (toggleMain) toggleMain.setAttribute('aria-checked', enabled ? 'true' : 'false');
+}
+
+function toggleCounter() {
+  const current = loadCounterSetting();
+  const newValue = !current;
+  saveCounterSetting(newValue);
+  applyCounterSetting(newValue);
+}
+
 // ── Event wiring ─────────────────────────────────────────────────
 function bootstrap() {
   resetState();
 
   applyTheme(loadTheme());
+  applyCounterSetting(loadCounterSetting());
   // Ask webcam permission on the initial screen to avoid time loss during gameplay.
   startWebcam();
 
@@ -724,7 +766,13 @@ function bootstrap() {
 
   $('btn-resume').addEventListener('click', resumeGame);
 
+  $('btn-settings').addEventListener('click', () => showScreen('settings'));
+  $('btn-close-settings').addEventListener('click', () => showScreen('start'));
+
   $('theme-toggle').addEventListener('click', () => toggleTheme());
+  $('theme-toggle-main').addEventListener('click', () => toggleTheme());
+  $('counter-toggle').addEventListener('click', () => toggleCounter());
+  $('counter-toggle-main').addEventListener('click', () => toggleCounter());
 
   $('btn-restart').addEventListener('click', () => showScreen('start'));
 

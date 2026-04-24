@@ -40,6 +40,39 @@
         />
       </div>
       <button id="btn-start" class="btn btn-primary">Empezar partida</button>
+      <button id="btn-settings" class="btn btn-secondary">⚙️ Configuración</button>
+    </div>
+  </div>
+
+  <!-- SCREEN: Settings -->
+  <div id="screen-settings" class="screen">
+    <div class="settings-card">
+      <h2 class="settings-title">Configuración</h2>
+      <div class="settings-group">
+        <div class="pause-theme" role="group" aria-labelledby="theme-toggle-label">
+          <span id="theme-toggle-label" class="pause-theme-label">Modo oscuro</span>
+          <button
+            type="button"
+            id="theme-toggle-main"
+            class="theme-toggle"
+            role="switch"
+            aria-checked="false"
+            aria-labelledby="theme-toggle-label"
+          ></button>
+        </div>
+        <div class="pause-counter" role="group" aria-labelledby="counter-toggle-label-main">
+          <span id="counter-toggle-label-main" class="pause-counter-label">Mostrar contador</span>
+          <button
+            type="button"
+            id="counter-toggle-main"
+            class="counter-toggle"
+            role="switch"
+            aria-checked="false"
+            aria-labelledby="counter-toggle-label-main"
+          ></button>
+        </div>
+      </div>
+      <button id="btn-close-settings" class="btn btn-primary">Volver</button>
     </div>
   </div>
 
@@ -84,16 +117,29 @@
       <div class="pause-card">
         <h3 class="pause-title">Pausa</h3>
         <div id="pause-leaderboard"></div>
-        <div class="pause-theme" role="group" aria-labelledby="theme-toggle-label">
-          <span id="theme-toggle-label" class="pause-theme-label">Modo oscuro</span>
-          <button
-            type="button"
-            id="theme-toggle"
-            class="theme-toggle"
-            role="switch"
-            aria-checked="false"
-            aria-labelledby="theme-toggle-label"
-          ></button>
+        <div class="pause-settings">
+          <div class="pause-theme" role="group" aria-labelledby="theme-toggle-label">
+            <span id="theme-toggle-label" class="pause-theme-label">Modo oscuro</span>
+            <button
+              type="button"
+              id="theme-toggle"
+              class="theme-toggle"
+              role="switch"
+              aria-checked="false"
+              aria-labelledby="theme-toggle-label"
+            ></button>
+          </div>
+          <div class="pause-counter" role="group" aria-labelledby="counter-toggle-label">
+            <span id="counter-toggle-label" class="pause-counter-label">Mostrar contador</span>
+            <button
+              type="button"
+              id="counter-toggle"
+              class="counter-toggle"
+              role="switch"
+              aria-checked="false"
+              aria-labelledby="counter-toggle-label"
+            ></button>
+          </div>
         </div>
         <button id="btn-resume" class="btn btn-primary">Continuar <kbd>Esc</kbd></button>
       </div>
@@ -126,7 +172,7 @@
       <span class="key-hint-sep">&ensp;·&ensp;</span>
       <span class="key-hint-group">
         <button type="button" id="btn-back" class="key-hint-btn" aria-label="Volver una letra (+2s) (tecla V)" aria-keyshortcuts="V" title="Tecla V">V</button>
-        Volver (+2s)
+        Volver<span id="back-penalty"> (+2s)</span>
       </span>
     </div>
 
