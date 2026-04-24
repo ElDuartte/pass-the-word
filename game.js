@@ -416,6 +416,7 @@ function goBackLetter() {
 
   setActiveLetter(lastAction.index);
   state.timeLeft = Math.min(ROUND_SECONDS, state.timeLeft + 2);
+  console.log(`Seconds left: ${state.timeLeft}`);
   renderTimeLeft();
   updatePlayerRank();
   soundSkip();
@@ -494,6 +495,7 @@ function tickRoundTimer() {
   if (state.timeLeft <= 0) return;
 
   state.timeLeft -= 1;
+  console.log(`Seconds left: ${state.timeLeft}`);
   renderTimeLeft();
 
   if (state.timeLeft <= 0) {
@@ -503,6 +505,7 @@ function tickRoundTimer() {
 
 function startRoundTimer() {
   stopRoundTimer();
+  if (!loadCounterSetting()) return;
   roundTimerId = setInterval(tickRoundTimer, 1000);
 }
 
