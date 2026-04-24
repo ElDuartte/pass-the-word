@@ -422,7 +422,8 @@ function goBackLetter() {
 }
 
 function checkEndConditions() {
-  if (state.timeLeft <= 0) {
+  const counterEnabled = loadCounterSetting();
+  if (state.timeLeft <= 0 && counterEnabled) {
     triggerLoss('timeout');
     return true;
   }
@@ -451,7 +452,7 @@ function triggerWin() {
   $('end-icon').textContent   = '🏆';
   $('end-title').textContent  = '¡Has ganado!';
   $('end-title').className    = 'win';
-  $('end-summary').textContent = '¡Impresionante! Las 26 palabras correctas.';
+  $('end-summary').textContent = '¡Impresionante! Las 27 palabras correctas.';
 
   persistResult();
   renderEndStats();
@@ -466,7 +467,7 @@ function triggerLoss(reason = 'completed') {
 
   const summary = reason === 'timeout'
     ? `Se acabó el tiempo. Acertaste ${state.correctCount} palabras.`
-    : `Respondiste las 26 palabras, pero solo acertaste ${state.correctCount}.`;
+    : `Respondiste las 27 palabras, pero solo acertaste ${state.correctCount}.`;
 
   $('end-icon').textContent   = '👍';
   $('end-title').textContent  = 'Bien hecho';

@@ -89,6 +89,12 @@ const WORD_BANK = [
     status: 0,
   },
   {
+    letter: 'Ñ',
+    answer: 'ÑANDU',
+    clue: 'Ave no voladora de gran tamaño originaria de América del Sur, similar al avestruz.',
+    status: 0,
+  },
+  {
     letter: 'O',
     answer: 'ÓRBITA',
     clue: 'Trayectoria curva que sigue un objeto celeste alrededor de una estrella o planeta.',
