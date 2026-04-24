@@ -734,7 +734,7 @@ function bootstrap() {
   $('btn-back').addEventListener('click', goBackLetter);
 
   document.addEventListener('keydown', e => {
-    const handledKeys = new Set(['escape', 's', 'n', 'p', 'b']);
+    const handledKeys = new Set(['escape', 's', 'n', 'p', 'v']);
     const key = e.key.toLowerCase();
 
     if (e.repeat && handledKeys.has(key)) {
@@ -754,7 +754,7 @@ function bootstrap() {
     if (e.key === 's' || e.key === 'S') { e.preventDefault(); markLetter(true);  }
     if (e.key === 'n' || e.key === 'N') { e.preventDefault(); markLetter(false); }
     if (e.key === 'p' || e.key === 'P') { e.preventDefault(); passLetter();      }
-    if (e.key === 'b' || e.key === 'B') { e.preventDefault(); goBackLetter();    }
+    if (e.key === 'v' || e.key === 'V') { e.preventDefault(); goBackLetter();    }
   });
 
   const onViewportResize = () => {
